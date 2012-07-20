@@ -44,15 +44,7 @@ var BasecampModel = Backbone.Model.extend({
   , parse : function (response) {
     return (response[this.type]) ? response[this.type] : response;
   }
-});
-
-function basecampModel(type, types) {
-  return BasecampModel.extend({
-      type : type
-    , types : types || (type + 's')
-  });
-} // }}}
-
+}); // }}}
 // Basecamp Collection {{{1
 
 var BasecampCollection = Backbone.Collection.extend({
@@ -70,15 +62,8 @@ var BasecampCollection = Backbone.Collection.extend({
       (project ? 'projects/' + project + '/' : '') +
       this.model.prototype.types + '.json';
   }
-});
-
-function basecampCollection(model) {
-  return BasecampCollection.extend({
-    model : model
-    , getProject : model.prototype.getProject
-  });
-} // }}}
-
+  , getProject : BasecampModel.prototype.getProject
+}); // }}}
 // Access the Basecamp REST service {{{1
 
 var method_map = {
@@ -129,13 +114,17 @@ Backbone.sync = function (method, model, options) {
         });
   }
 }; // }}}
-
 // Export the API {{{1
 
 function createExport(singular, plural) {
   plural || (plural = singular + 's');
-  exports[singular] = basecampModel(singular.toLowerCase());
-  exports[plural] = basecampCollection(exports[singular]);
+  exports[singular] = BasecampModel.extend({
+      type : singular.toLowerCase()
+    , types : plural.toLowerCase()
+  });
+  exports[plural] = BasecampCollection.extend({
+    model : exports[singular]
+  });
 }
 
 createExport('Project');
