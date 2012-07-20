@@ -11,7 +11,6 @@
     "url": "git://github.com/oxyc/node-basecamp.git"
   },
   "dependencies" : {
-    "underscore" : "1.31",
     "restler" : "0.2.5",
     "backbone" : "0.9.1"
   }

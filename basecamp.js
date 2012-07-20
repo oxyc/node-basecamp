@@ -1,11 +1,20 @@
 var rest = require('restler')
   , Backbone = require('backbone')
-  , _ = require('underscore')
-
   , BASECAMP_API_VERSION = exports.BASECAMP_API_VERSION = 'v1'
   , BASECAMP_ACCOUNT
   , basecamp;
 
+// Helpers {{{1
+var slice = Array.prototype.slice;
+
+function extend(target) {
+  slice.call(arguments, 1).forEach(function(obj) {
+    Object.keys(obj).forEach(function(key) {
+      target[key] = obj[key];
+    });
+  });
+}
+// }}}
 // Basecamp Model {{{1
 
 var BasecampModel = Backbone.Model.extend({
@@ -14,14 +23,15 @@ var BasecampModel = Backbone.Model.extend({
   , project : false
 
   , initialize : function() {
-    if (!_.isUndefined(this.get('project'))) {
-      this.project = this.get('project');
+    var project = this.get('project');
+    if (typeof project !== 'undefined') {
+      this.project = project;
     }
   }
 
   , getProject : function(attr) {
     return this.project instanceof Backbone.Model ? this.project.get('id')
-      : _.isNumber(this.project) ? this.project
+      : this.project > 1 ? this.project
       : false;
   }
 
@@ -49,7 +59,7 @@ var BasecampModel = Backbone.Model.extend({
 
 var BasecampCollection = Backbone.Collection.extend({
   initialize : function(models, project) {
-    if (!_.isUndefined(project)) {
+    if (typeof project !== 'undefined') {
       this.project = project;
     }
   }
@@ -79,8 +89,8 @@ Backbone.sync = function (method, model, options) {
 
   options || (options = {});
 
-  if (model && _.include(['create', 'update'], method)) {
-    _.extend(options, {
+  if (model && ~['create', 'update'].indexOf(method)) {
+    extend(options, {
         data : JSON.stringify(model.toJSON())
       , headers : { 'Content-Type' : 'application/json' }
     });
@@ -143,7 +153,7 @@ createExport('Calendar');
 createExport('CalendarEvent');
 
 var Basecamp = rest.service(function (options) {
-  _.extend(this.defaults, options);
+  extend(this.defaults, options);
 }, {
     baseURL : 'https://basecamp.com'
   , headers : {
