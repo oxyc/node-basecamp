@@ -1,0 +1,18 @@
+{
+  "name" : "basecamp",
+  "version" : "0.0.1",
+  "description" : "Wrapper for the Basecamp API using backbone",
+  "author" : { "name" : "Oskar Schöldström", "email" : "public@oxy.fi" },
+  "homepage" : "https://github.com/oxyc/node-basecamp",
+  "main" : "basecamp",
+  "engines" : { "node" : "*" },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/oxyc/node-basecamp.git"
+  },
+  "dependencies" : {
+    "underscore" : "1.31",
+    "restler" : "0.2.5",
+    "backbone" : "0.9.1"
+  }
+}
