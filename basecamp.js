@@ -1,5 +1,6 @@
 var rest = require('restler')
   , Backbone = require('backbone')
+  , qs = require('querystring')
   , BASECAMP_API_VERSION = exports.BASECAMP_API_VERSION = 'v1'
   , BASECAMP_ACCOUNT
   , basecamp;
@@ -20,37 +21,24 @@ function extend(target) {
 var BasecampModel = Backbone.Model.extend({
     type : 'none'
   , types : 'none'
-  , project : false
-
-  , initialize : function() {
-    var project = this.get('project');
-    if (typeof project !== 'undefined') {
-      this.project = project;
-    }
-  }
 
   , getProject : function(attr) {
-    return this.project instanceof Backbone.Model ? this.project.get('id')
-      : this.project > 1 ? this.project
-      : false;
+    var project = this.get('project');
+    return project instanceof Backbone.Model ? project.get('id')
+      : project > 1 ? project
+      : null;
   }
 
   , url : function () {
-    return '/' +
-      BASECAMP_ACCOUNT + '/' +
-      'api/' + BASECAMP_API_VERSION + '/' +
-      (this.getProject() ? 'projects/' + this.getProject() + '/' : '') +
-      this.types + '/' +
-      this.id + '.json';
-  }
-  , toJSON : function () {
-    var data = Backbone.Model.prototype.toJSON.apply(this)
-      , result = {};
+    var url = '/' + BASECAMP_ACCOUNT +
+      '/api/' + BASECAMP_API_VERSION +
+      (this.getProject() ? '/projects/' + this.getProject() : '') +
+      '/' + this.types +
+      (!this.isNew() ? '/' + this.id : '') +
+      '.json';
 
-    result[this.type] = data;
-    return result;
+    return url;
   }
-
   , parse : function (response) {
     return (response[this.type]) ? response[this.type] : response;
   }
@@ -66,13 +54,17 @@ var BasecampCollection = Backbone.Collection.extend({
   , url : function () {
     var project = this.getProject();
 
-    return '/' +
-      BASECAMP_ACCOUNT + '/' +
-      'api/' + BASECAMP_API_VERSION + '/' +
-      (project ? 'projects/' + project + '/' : '') +
-      this.model.prototype.types + '.json';
+    return '/' + BASECAMP_ACCOUNT +
+      '/api/' + BASECAMP_API_VERSION +
+      (project ? '/projects/' + project : '') +
+      '/' + this.model.prototype.types + '.json';
   }
-  , getProject : BasecampModel.prototype.getProject
+  , getProject : function(attr) {
+    var project = this.project;
+    return project instanceof Backbone.Model ? project.get('id')
+      : project > 1 ? project
+      : null;
+  }
 }); // }}}
 // Access the Basecamp REST service {{{1
 
@@ -108,6 +100,7 @@ Backbone.sync = function (method, model, options) {
           else options.success(data);
         })
         .on('error', function(err) {
+          console.dir(err);
           options.error(err);
         });
     case 'DELETE':
@@ -115,6 +108,9 @@ Backbone.sync = function (method, model, options) {
         .on('complete', options.success)
         .on('error', options.error);
     case 'GET':
+      if (typeof options.data !== 'undefined') {
+        url += '?' + qs.stringify(options.data);
+      }
       return basecamp.get(url, options)
         .on('complete', function(data, resp) {
           options.success(data);
@@ -125,9 +121,14 @@ Backbone.sync = function (method, model, options) {
   }
 }; // }}}
 // Export the API {{{1
+function toUnderscore(str) {
+  return str[0] + str.substring(1).replace(/[A-Z]/g, '_' + '$&').toLowerCase();
+}
 
 function createExport(singular, plural) {
   plural || (plural = singular + 's');
+  singular = toUnderscore(singular);
+  plural = toUnderscore(plural);
   exports[singular] = BasecampModel.extend({
       type : singular.toLowerCase()
     , types : plural.toLowerCase()
